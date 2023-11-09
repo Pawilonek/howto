@@ -1,15 +1,39 @@
 #!/bin/bash
 
-# Load config file
+#
+# +----------
+# | Configuration
+# +----------
+# 
+# Load configuration from .env file and initialize missing variables
+#
+
 scriptPath="$(dirname "$(realpath "$0")")"
-cp -n "$scriptPath/.env.example" "$scriptPath/.env"
+envConfigFile="$scriptPath/.env"
+cp -n "$scriptPath/.env.example" "$envConfigFile"
 source $scriptPath/.env
 
 if [ -z "$OPENAPI_API_KEY" ]; then
-    echo "Missing API key in .env configuration" >&2
+    echo "Missing OpenAI API key in .env configuration"
+    echo "You can get one here: https://platform.openai.com/api-keys"
+    read -p "Please enter your API key: " newApiKey
+
+    # todo: Check if the key is value and only then update the confiog
+    sed -i "s/^OPENAPI_API_KEY=.*$/OPENAPI_API_KEY=\"$newApiKey\"/" .env
+
+    echo "Done. Now you can run the command once again to start using it."
 
     exit 1
 fi
+
+
+#
+# +----------
+# | Prompt
+# +----------
+# 
+# make sure that the command was run with a prompt
+#
 
 prompt=$*
 if [ -z "$prompt" ]; then
@@ -18,6 +42,15 @@ if [ -z "$prompt" ]; then
 
     exit 1
 fi
+
+
+#
+# +----------
+# | Request
+# +----------
+# 
+# Build and send a request to OpenAI API
+#
 
 payload=$(printf '{
     "model": "%s",
