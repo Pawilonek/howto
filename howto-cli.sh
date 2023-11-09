@@ -1,31 +1,38 @@
 #!/bin/bash
 
-API_ENDPOINT="https://api.openai.com/v1/chat/completions"
-API_KEY="<api-key>"
+# Load config file
+scriptPath="$(dirname "$(realpath "$0")")"
+cp -n "$scriptPath/.env.example" "$scriptPath/.env"
+source $scriptPath/.env
 
-prompt=$*
+if [ -z "$OPENAPI_API_KEY" ]; then
+    echo "Missing API key in .env configuration" >&2
 
-if [ -z "$prompt" ]; then
-  echo "Usage: $0 <prompt_text>"
-
-  exit 1
+    exit 1
 fi
 
+prompt=$*
+if [ -z "$prompt" ]; then
+    scriptName=$(basename $0)
+    echo "Usage: $scriptName <prompt_text>"
+
+    exit 1
+fi
 
 payload=$(printf '{
-    "model": "gpt-4",
+    "model": "%s",
     "messages": [
         {
             "role": "user",
             "content": "Do not include any explanation. Give me a working linux command to %s"
         }
     ]
-}' "$prompt")
+}' "$OPENAPI_MODEL" "$prompt")
 
 response=$(curl --request POST \
-    --url $API_ENDPOINT \
+    --url "https://api.openai.com/v1/chat/completions" \
     --header "Content-Type: application/json" \
-    --header "Authorization: Bearer $API_KEY" \
+    --header "Authorization: Bearer $OPENAPI_API_KEY" \
     --max-time 10 \
     --silent \
     --data "$payload" \
