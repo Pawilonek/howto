@@ -11,12 +11,12 @@
 scriptPath="$(dirname "$(realpath "$0")")"
 envConfigFile="$scriptPath/.env"
 cp -n "$scriptPath/.env.example" "$envConfigFile"
-source $scriptPath/.env
+eval "$(cat "$scriptPath/.env")"
 
 if [ -z "$OPENAPI_API_KEY" ]; then
     echo "Missing OpenAI API key in .env configuration"
     echo "You can get one here: https://platform.openai.com/api-keys"
-    read -p "Please enter your API key: " newApiKey
+    read -r -p "Please enter your API key: " newApiKey
 
     # todo: Check if the key is value and only then update the confiog
     sed -i "s/^OPENAPI_API_KEY=.*$/OPENAPI_API_KEY=\"$newApiKey\"/" .env
@@ -37,7 +37,7 @@ fi
 
 prompt=$*
 if [ -z "$prompt" ]; then
-    scriptName=$(basename $0)
+    scriptName="$(basename "$0")"
     echo "Usage: $scriptName <prompt_text>"
 
     exit 1
@@ -114,6 +114,6 @@ elif command -v xclip > /dev/null 2>&1; then
 fi
 
 if [[ -n "$clipCommand" ]]; then
-    echo "$command" | $($clipCommand)
+    echo "$command" | $clipCommand
 fi
 
