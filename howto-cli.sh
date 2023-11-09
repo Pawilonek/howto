@@ -49,7 +49,7 @@ fi
 # | Request
 # +----------
 # 
-# Build and send a request to OpenAI API
+# Build, send a request to OpenAI API and validate the response
 #
 
 payload=$(printf '{
@@ -57,7 +57,7 @@ payload=$(printf '{
     "messages": [
         {
             "role": "user",
-            "content": "Do not include any explanation. Give me a working linux command to %s"
+            "content": "Do not include any explanation. Do not use code blocks for code. Give me a working linux command to %s"
         }
     ]
 }' "$OPENAPI_MODEL" "$prompt")
@@ -71,9 +71,28 @@ response=$(curl --request POST \
     --data "$payload" \
 )
 
-# todo: Add response checking
+curlExitCode=$?
+if [ $curlExitCode != 0 ]; then
+    echo -e "\033[31mCould not get any response from OpenAI API\033[0m"
+
+    exit 1
+fi
+
+errorMessage=$(echo "$response" | jq -r '.error.message')
+if [ "$errorMessage" != "null" ] || [ -z "$errorMessage" ]; then
+    echo -e "\033[31mError response from OpenAI API:\033[0m $errorMessage"
+
+    exit 1
+fi
 
 command=$(echo "$response" | jq -r '.choices[0].message.content')
+if [ "$command" == "null" ]; then
+    echo -e "\033[31mError response from OpenAI API:\033[0m"
+    echo "$response" | jq
+
+    exit 1
+fi
+
 echo "$command"
 
 
