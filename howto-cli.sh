@@ -71,5 +71,30 @@ response=$(curl --request POST \
     --data "$payload" \
 )
 
-echo "$response" | jq -r '.choices[0].message.content'
+# todo: Add response checking
+
+command=$(echo "$response" | jq -r '.choices[0].message.content')
+echo "$command"
+
+
+#
+# +----------
+# | Clipboard
+# +----------
+# 
+# Check what command to use and copy the result to clipboard if available
+#
+
+clipCommand=""
+if command -v clip.exe > /dev/null 2>&1; then
+    # Windows (WSL)
+    clipCommand="clip.exe"
+elif command -v xclip > /dev/null 2>&1; then
+    # Linux or OSX
+    clipCommand="xclip -selection clipboard"
+fi
+
+if [[ -n "$clipCommand" ]]; then
+    echo "$command" | $($clipCommand)
+fi
 
